@@ -1,0 +1,44 @@
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    hostname: jenkins.local
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+    networks:
+      jenkins-net:
+        ipv4_address: 172.23.0.10
+
+  jenkins-agent-0:
+    image: jenkins/inbound-agent:latest
+    container_name: jenkins-agent-0
+    hostname: jenkins-agent-0.local
+    restart: always
+    environment:
+      - JENKINS_URL=http://jenkins.local:8080
+      - JENKINS_AGENT_NAME=agent-0
+      - JENKINS_SECRET=cdf044d7faeec6ea6972f6e60501955042fab337291f0a740b3cd836e993109b
+    volumes:
+      - ./agent_0:/home/jenkins
+      - /var/run/docker.sock:/var/run/docker.sock      
+    networks:
+      - jenkins-net
+    extra_hosts:
+      - "jenkins.local:172.23.0.10"
+    depends_on:
+      - jenkins
+
+volumes:
+  jenkins_home:
+  agent_0:
+
+networks:
+  jenkins-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/24
+          gateway: 172.23.0.1
